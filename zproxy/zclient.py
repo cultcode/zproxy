@@ -20,13 +20,14 @@ value_barrier = None
 def create_barrier():
   if path_barrier is not None:
     try:
-      logging.info('create_barrier')
       zk.create(path_barrier, value=value_barrier, acl=None, ephemeral=True, sequence=False, makepath=True)
-    except NodeExistsError:
+    except NodeExistsError as e:
       pass
     except:
       logging.error(e)
       sys.exit(1)
+    else:
+      logging.info(path_barrier+' created')
 
 
 def my_listener(state):
@@ -52,9 +53,11 @@ def start(config):
     value_barrier = json.dumps({'NodeId':config['nodeid']}, encoding='utf-8')
 
     @zk.DataWatch(path_barrier)
-    def watch_node(data, stat):
+    def watch_node(data, stat,event):
       if data:
         logging.info("data: %s" % data.decode("utf-8"))
+      if event:
+        logging.info("path: %s" % event.path)
       zk.handler.spawn(create_barrier)
       
 
