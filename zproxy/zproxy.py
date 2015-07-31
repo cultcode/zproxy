@@ -10,28 +10,34 @@ import logging
 import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from zproxy import shell
+from zproxy import shell, local, remote, zclient
 
 
 def main():
-    shell.check_python()
+  shell.check_python()
 
-    config = shell.get_config()
+  config = shell.get_config()
 
-    try:
-        logging.info("starting local at %s:%d" %
-                     (config['local_address'], config['local_port']))
+  try:
+    logging.info("starting local at %s:%d" %
+                 (config['local_address'], config['local_port']))
 
-        def int_handler(signum, _):
-            logging.warn('received SIGINIT, doing graceful shutting down..')
-            #free resource
-            sys.exit(1)
-        signal.signal(signal.SIGINT, int_handler)
+    def int_handler(signum, _):
+      logging.warn('received SIGINIT, doing graceful shutting down..')
+      #free resource
+      sys.exit(1)
+    signal.signal(signal.SIGINT, int_handler)
 
-        #loop.run()
-    except Exception as e:
-        shell.print_exception(e)
-        sys.exit(1)
+  except Exception as e:
+    shell.print_exception(e)
+    sys.exit(1)
+
+#  remote.svrInit(config)
+
+  zclient.start(config)
+
+#  local.start(config)
+
 
 if __name__ == '__main__':
     main()

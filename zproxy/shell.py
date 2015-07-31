@@ -9,7 +9,7 @@ import json
 import sys
 import getopt
 import logging
-from zproxy.common import to_bytes, to_str
+from zproxy.common import to_str,to_bytes,getVersion
 
 
 VERBOSE_LEVEL = 5
@@ -38,17 +38,6 @@ def print_exception(e):
     traceback.print_exc()
 
 
-def print_version():
-  version = ''
-  try:
-    import pkg_resources
-    version = pkg_resources.get_distribution('zproxy').version
-  except Exception as e:
-    #pass
-    print_exception(e)
-  print('zproxy %s' % version)
-
-
 def find_config():
   config_path = 'config.json'
   if os.path.exists(config_path):
@@ -69,12 +58,16 @@ def check_config(config):
   if config.get('local_address', '') in [b'0.0.0.0']:
     logging.warn('warning: local set to listen on 0.0.0.0, it\'s not safe')
 
-  if config.get('server', '') in ['127.0.0.1', 'localhost']:
-    logging.warn('warning: server set to listen on %s:%s, are you sure?' %
-           (to_str(config['server']), config['server_port']))
+  if config.get('server_address', '') in ['127.0.0.1', 'localhost']:
+    logging.warn('warning: server address set to listen on %s:%s, are you sure?' %
+           (to_str(config['server_address']), config['server_port']))
 
   if config.get('identity', None) is None:
     logging.error('identity can\'t default to none')
+    sys.exit(1)
+
+  if config.get('dbagent', None) is None:
+    logging.error('dbagent can\'t default to none')
     sys.exit(1)
 
 
@@ -84,7 +77,7 @@ def get_config():
   logging.basicConfig(level=logging.INFO,
                       format='%(levelname)-s: %(message)s')
 
-  shortopts = 'hc:vqs:p:l:a:b:d:k:i:'
+  shortopts = 'hc:vqs:p:l:a:bd:k:i:g:n:'
   longopts = ['help', 'version', 'log-file']
 
   try:
@@ -110,7 +103,7 @@ def get_config():
     v_count = 0
     for key, value in optlist:
       if key == '-s':
-        config['server'] = to_str(value)
+        config['server_address'] = to_str(value)
       elif key == '-p':
           config['server_port'] = int(value)
       elif key == '-l':
@@ -129,7 +122,7 @@ def get_config():
         print_help()
         sys.exit(0)
       elif key == '--version':
-        print_version()
+        print(getVersion())
         sys.exit(0)
       elif key == '--log-file':
         config['log-file'] = to_str(value)
@@ -137,6 +130,10 @@ def get_config():
         config['des3-key'] = to_str(value)
       elif key == '-i':
         config['des3-iv'] = to_str(value)
+      elif key == '-g':
+        config['dbagent'] = to_str(value)
+      elif key == '-n':
+        config['nodeid'] = int(value)
       elif key == '-q':
         v_count -= 1
         config['verbose'] = v_count
@@ -151,17 +148,22 @@ def get_config():
     sys.exit(2)
 
   config['log-file'] = config.get('log-file', '/var/log/zproxy.log')
-  config['verbose'] = config.get('verbose', False)
-  config['local_address'] = to_str(config.get('local_address', '0.0.0.0'))
-  config['local_port'] = config.get('local_port', 1080)
-  config['server'] = to_str(config.get('server', '127.0.0.1'))
+  config['verbose'] = config.get('verbose', 0)
+  config['local_address'] = to_str(config.get('local_address', 'localhost'))
+  config['local_port'] = config.get('local_port', 7070)
+  config['server_address'] = to_str(config.get('server_address', '127.0.0.1'))
   config['server_port'] = config.get('server_port', 2181)
   config['des3-key'] = to_str(config.get('des3-key', 'D^=^vGfAdUTixobQP$HhsTsa'))
   config['des3-iv'] = to_str(config.get('des3-iv', 'aVtsvC#S'))
   config['barrier'] = config.get('barrier', False)
+  config['nodeid'] = config.get('nodeid', 0)
+
+  check_config(config)
 
   logging.getLogger('').handlers = []
+
   logging.addLevelName(VERBOSE_LEVEL, 'VERBOSE')
+
   if config['verbose'] >= 2:
     level = VERBOSE_LEVEL
   elif config['verbose'] == 1:
@@ -172,20 +174,15 @@ def get_config():
     level = logging.ERROR
   else:
     level = logging.INFO
-  verbose = config['verbose']
+
   logging.basicConfig(level=level,
-            format='%(asctime)s %(levelname)-8s %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S')
+                      format='%(asctime)s %(levelname)-8s %(message)s',
+                      datefmt='%Y-%m-%d %H:%M:%S',
+                      #filename=config['log-file'],
+                      filemode='w'
+                      ),
 
-  check_config(config)
-
-  sys.stdin.close()
-  try:
-    freopen(config['log_file'], 'a', sys.stdout)
-    freopen(config['log_file'], 'a', sys.stderr)
-  except IOError as e:
-    shell.print_exception(e)
-    sys.exit(1)
+  verbose = config['verbose']
 
   return config
 
@@ -198,14 +195,15 @@ You can supply configurations via either config file or command line arguments.
 
 Proxy options:
   -c CONFIG              path to config file
-  -s SERVER_ADDR         server address
+  -s SERVER_ADDRESS      server address
   -p SERVER_PORT         server port, default: 8388
-  -a LOCAL_ADDR          local binding address, default: 127.0.0.1
+  -a LOCAL_ADDRESS       local binding address, default: 127.0.0.1
   -l LOCAL_PORT          local port, default: 1080
   -d IDENTITY            identity
   -b BARRIER             barrier mode
   -k DES3_KEY            key for des3 encryption
   -i DES3_IV             iv  for des3 encryption
+  -g DBAGENT             address of DBAgent
 
 General options:
   -h, --help             show this help message and exit
