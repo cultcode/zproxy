@@ -16,11 +16,11 @@ from zproxy import shell, local, remote, zclient
 def main():
   shell.check_python()
 
-  config = shell.get_config()
+  shell.get_config()
 
   try:
     logging.info("starting local at %s:%d" %
-                 (config['local_address'], config['local_port']))
+                 (shell.config['local_address'], shell.config['local_port']))
 
     def int_handler(signum, _):
       logging.warn('received SIGINIT, doing graceful shutting down..')
@@ -32,11 +32,11 @@ def main():
     shell.print_exception(e)
     sys.exit(1)
 
-#  remote.svrInit(config)
+#  remote.svrInit()
 
-  zclient.start(config)
+  zclient.start()
 
-#  local.start(config)
+#  local.start()
 
 
 if __name__ == '__main__':

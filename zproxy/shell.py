@@ -15,6 +15,7 @@ from zproxy.common import to_str,to_bytes,getVersion
 VERBOSE_LEVEL = 5
 
 verbose = 0
+config = None
 
 
 def check_python():
@@ -72,7 +73,7 @@ def check_config(config):
 
 
 def get_config():
-  global verbose
+  global verbose, config
 
   logging.basicConfig(level=logging.INFO,
                       format='%(levelname)-s: %(message)s')
