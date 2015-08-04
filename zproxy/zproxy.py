@@ -8,6 +8,7 @@ import sys
 import os
 import logging
 import signal
+import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from zproxy import shell, local, remote, zclient
@@ -36,7 +37,10 @@ def main():
 
   zclient.start()
 
-#  local.start()
+  local.start()
+
+  while True:
+    time.sleep(5)
 
 
 if __name__ == '__main__':

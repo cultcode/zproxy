@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, print_function, \
 import logging
 import json
 import sys
-import time
 
 from kazoo.client import KazooClient
 from kazoo.protocol.states import *
@@ -16,19 +15,25 @@ from kazoo.exceptions import *
 from zproxy import shell
 
 zk = None
+offset = -1
 
 
-def create_barrier():
-  path_barrier = '/'+shell.config['identity']+'/barrier'
-  value_barrier = json.dumps({'NodeId':shell.config['nodeid']}, encoding='utf-8')
-  if path_barrier is not None:
-    try:
-      zk.create(path_barrier, value=value_barrier, acl=None, ephemeral=True, sequence=False, makepath=True)
-    except NodeExistsError as e:
-      pass
-    except:
-      logging.error(e)
-      sys.exit(1)
+def create_ephemeral():
+  if shell.config['barrier'] is True:
+    path  = '/'+shell.config['identity']+'/barrier'
+  else:
+    path  = '/'+shell.config['identity']
+  value = json.dumps({'NodeId':shell.config['nodeid']}, encoding='utf-8')
+
+  try:
+    zk.create(path, value=value, acl=None, ephemeral=True, sequence=(not shell.config['barrier']), makepath=True)
+  except NodeExistsError as e:
+    pass
+  except:
+    logging.error(e)
+    sys.exit(1)
+  else:
+    logging.info("Node %s created with value %s" %(path, value))
 
 
 def my_listener(state):
@@ -41,7 +46,7 @@ def my_listener(state):
       pass
     # Handle being connected/reconnected to Zookeeper
     else:
-      zk.handler.spawn(create_barrier)
+      zk.handler.spawn(create_ephemeral)
 
 
 def start():
@@ -58,12 +63,88 @@ def start():
       if event:
         logging.info("Node Event %s %s" %(event.path, event.type))
         if event.type == EventType.DELETED:
-          zk.handler.spawn(create_barrier)
+          zk.handler.spawn(create_ephemeral)
       
 
   zk.add_listener(my_listener)
 
   zk.start()
 
-  while True:
-    time.sleep(5)
+def query_barrier(identity):
+  path = '/'+identity+'/barrier'
+  if zk.exists(path):
+    try:
+      (value, stat) = zk.get(path)
+      logging.info("Master is %s" %value)
+      value = json.loads(value)
+      return value['NodeId']
+    except Exception as e:
+      logging.warn("Master querying failed")
+      logging.warn(e)
+      return None
+  else:
+    logging.warn("Master querying failed")
+    return None
+
+
+def query_lowest(identity):
+  global offset
+  path = '/'+identity
+  names = []
+  values = []
+  lowest_v = sys.maxint
+  lowest_i = []
+
+  try:
+    names = zk.get_children(path)
+  except:
+    return None
+  for name in names:
+    try:
+      value = zk.get(name)
+    except:
+      names.remove(name)
+    else:
+      values.append(value['TaskSum'])
+
+  for i in range(len(values)):
+    if values[i] < lowest_v:
+      lowest_v = values[i]
+
+  for i in range(len(values)):
+    if values[i] == lowest_v:
+      lowest_i.append(i)
+
+  offset = offset + 1
+  if offset >= len(lowest_i):
+    offset = 0
+
+  return names[offset]
+
+def update_payload(identity,payload):
+  try:
+    names = zk.get_children(path)
+  except:
+    return False
+  for name in names:
+    try:
+      value = zk.get(name)
+    except:
+      names.remove(name)
+    else:
+      if shell.config['NodeId'] == value['NodeId']:
+        break
+  else:
+    return False
+
+  for (k,v) in payload:
+    value[k] = v
+
+  try:
+    zk.set(name, value)
+  except:
+    return False
+
+  return True
+
+

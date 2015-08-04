@@ -78,7 +78,7 @@ def get_config():
   logging.basicConfig(level=logging.INFO,
                       format='%(levelname)-s: %(message)s')
 
-  shortopts = 'hc:vqs:p:l:a:bd:k:i:g:n:'
+  shortopts = 'hc:vqs:p:l:a:bd:k:i:g:n:e:'
   longopts = ['help', 'version', 'log-file']
 
   try:
@@ -135,6 +135,8 @@ def get_config():
         config['dbagent'] = to_str(value)
       elif key == '-n':
         config['nodeid'] = int(value)
+      elif key == '-e':
+        config['encrypt'] = int(value)
       elif key == '-q':
         v_count -= 1
         config['verbose'] = v_count
@@ -158,6 +160,7 @@ def get_config():
   config['des3-iv'] = to_str(config.get('des3-iv', 'aVtsvC#S'))
   config['barrier'] = config.get('barrier', False)
   config['nodeid'] = config.get('nodeid', 0)
+  config['encrypt'] = config.get('encrypt', 1)
 
   check_config(config)
 
