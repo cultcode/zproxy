@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 import logging
 import json
 import sys
+import os
 
 from kazoo.client import KazooClient
 from kazoo.protocol.states import *
@@ -19,21 +20,24 @@ offset = -1
 
 
 def create_ephemeral():
-  if shell.config['barrier'] is True:
-    path  = '/'+shell.config['identity']+'/barrier'
+  if not shell.config['barrier']:
+    path  = '/'+shell.config['identity']+'/'
+    value = json.dumps({'NodeId':shell.config['nodeid'],'TaskSum':0}, encoding='utf-8')
+    sequence = True
   else:
-    path  = '/'+shell.config['identity']
-  value = json.dumps({'NodeId':shell.config['nodeid']}, encoding='utf-8')
+    path  = '/'+shell.config['identity']+'/barrier'
+    value = json.dumps({'NodeId':shell.config['nodeid']}, encoding='utf-8')
+    sequence = False
 
   try:
-    zk.create(path, value=value, acl=None, ephemeral=True, sequence=(not shell.config['barrier']), makepath=True)
+    ret = zk.create(path, value=value, acl=None, ephemeral=True, sequence=sequence, makepath=True)
   except NodeExistsError as e:
     pass
-  except:
+  except Exception as e:
     logging.error(e)
     sys.exit(1)
   else:
-    logging.info("Node %s created with value %s" %(path, value))
+    logging.info("Node %s created with value %s" %(ret, value))
 
 
 def my_listener(state):
@@ -71,15 +75,16 @@ def start():
   zk.start()
 
 def query_barrier(identity):
+  if identity is None:
+    return None
   path = '/'+identity+'/barrier'
   if zk.exists(path):
     try:
-      (value, stat) = zk.get(path)
+      (value, junk) = zk.get(path)
       logging.info("Master is %s" %value)
       value = json.loads(value)
       return value['NodeId']
     except Exception as e:
-      logging.warn("Master querying failed")
       logging.warn(e)
       return None
   else:
@@ -90,26 +95,30 @@ def query_barrier(identity):
 def query_lowest(identity):
   global offset
   path = '/'+identity
-  names = []
+  nodes = []
   values = []
+  nodeids = []
   lowest_v = sys.maxint
   lowest_i = []
 
   try:
-    names = zk.get_children(path)
-  except:
+    nodes = zk.get_children(path)
+  except Exception as e:
+    logging.warn(e)
     return None
-  for name in names:
+  for node in nodes:
     try:
-      value = zk.get(name)
+      (value,junk) = zk.get("%s/%s" %(path, node))
+      value = json.loads(value, encoding='UTF-8')
     except:
-      names.remove(name)
+      nodes.remove(node)
     else:
       values.append(value['TaskSum'])
+      nodeids.append(value['NodeId'])
 
   for i in range(len(values)):
-    if values[i] < lowest_v:
-      lowest_v = values[i]
+    if int(values[i]) < lowest_v:
+      lowest_v = int(values[i])
 
   for i in range(len(values)):
     if values[i] == lowest_v:
@@ -119,32 +128,71 @@ def query_lowest(identity):
   if offset >= len(lowest_i):
     offset = 0
 
-  return names[offset]
+  return nodeids[offset]
 
 def update_payload(identity,payload):
+  path = '/'+identity
+
   try:
-    names = zk.get_children(path)
-  except:
+    nodes = zk.get_children(path)
+  except Exception as e:
+    logging.warn(e)
     return False
-  for name in names:
+  for node in nodes:
     try:
-      value = zk.get(name)
-    except:
-      names.remove(name)
+      (value,junk) = zk.get("%s/%s" %(path, node))
+      value = json.loads(value, encoding='UTF-8')
+    except Exception as e:
+      logging.warn(e)
+      nodes.remove(node)
     else:
-      if shell.config['NodeId'] == value['NodeId']:
+      if shell.config['nodeid'] == value['NodeId']:
         break
   else:
+    logging.warn("Cannot find NodeId:%s from children of %s" %(shell.config['nodeid'], path))
     return False
 
-  for (k,v) in payload:
-    value[k] = v
+  for (k,v) in payload.items():
+      value[k] = v
 
   try:
-    zk.set(name, value)
+    value = json.dumps(value)
+    zk.set("%s/%s" %(path, node), value)
   except:
     return False
 
   return True
 
+def export_tree(path):
+  tree = {}
+  children = []
+
+  tree['name'] = path
+  try:
+    value,junk = zk.get(path)
+  except Exception as e:
+    tree['value'] = ''
+    logging.warn(e)
+  else:
+    try:
+      value_d = json.loads(value)
+    except Exception as e:
+      tree['value'] = value
+    else:
+      tree['value'] = value_d
+
+  try:
+    nodes = zk.get_children(path)
+  except Exception as e:
+    logging.warn(e)
+  else:
+    if nodes:
+      for node in nodes:
+        path_c = os.path.join(path,node)
+        if path_c == "/zookeeper":
+          continue
+        children.append(export_tree(path_c))
+        tree['children'] = children
+
+  return tree
 
