@@ -19,7 +19,7 @@ def hello():
   return "Hello World!"
 
 @post('/ZkAgentSvr/GetDeliMaster')
-def GetDeliMaster():
+def get_deli_master():
   content_r = {'Status':0,'StatusDesc':'Success','NodeId':0}
   identity = None
 
@@ -31,25 +31,29 @@ def GetDeliMaster():
   logging.info('Received '+content)
 
   if not content:
-    content_r['StatusDesc'] = 'Request body is empty'
+    #HACK
+    #content_r['StatusDesc'] = 'Request body is empty'
+    identity = 'deli'
   else:
     try:
       decodejson = json.loads(content, encoding='UTF-8')
     except:
       content_r['StatusDesc'] = 'Json parsing failed'
     else:
-      identity = decodejson['Identity']
+      #HACK
+      #identity = decodejson.get('Identity',None)
+      identity = decodejson.get('Identity','deli')
 
-      if not identity:
-        content_r['StatusDesc'] = 'No Identity specified'
-      else:
-        ret = zclient.query_barrier(identity)
+  if not identity:
+    content_r['StatusDesc'] = 'No Identity specified'
+  else:
+    ret = zclient.query_barrier(identity)
 
-        if not ret:
-          content_r['StatusDesc'] = 'Querying master failed'
-        else:
-          content_r['Status'] = 0
-          content_r['NodeId'] = ret
+    if not ret:
+      content_r['StatusDesc'] = 'Querying master failed'
+    else:
+      content_r['Status'] = 0
+      content_r['NodeId'] = ret
 
   content_r = json.dumps(content_r)
 
@@ -61,7 +65,7 @@ def GetDeliMaster():
   return content_r
 
 @post('/ZkAgentSvr/PayloadReport')
-def PayloadReport():
+def payload_report():
   content_r = {'Status':0,'StatusDesc':'Success'}
   identity = None
 
@@ -80,21 +84,22 @@ def PayloadReport():
     except:
       content_r['StatusDesc'] = 'Json parsing failed'
     else:
-      identity = decodejson['Identity']
-      del decodejson['Identity']
+      #HACK
+      #identity = decodejson.pop('Identity',None)
+      identity = decodejson.pop('Identity','p2p')
       payload  = decodejson
 
-      if not identity:
-        content_r['StatusDesc'] = 'No Identity specified'
-      elif not payload:
-        content_r['StatusDesc'] = 'No TaskSum specified'
-      else:
-        ret = zclient.update_payload(identity, payload)
+  if not identity:
+    content_r['StatusDesc'] = 'No Identity specified'
+  elif not payload:
+    content_r['StatusDesc'] = 'No TaskSum specified'
+  else:
+    ret = zclient.update_payload(identity, payload)
 
-        if not ret:
-          content_r['StatusDesc'] = 'Updating payload failed'
-        else:
-          content_r['Status'] = 0
+    if not ret:
+      content_r['StatusDesc'] = 'Updating payload failed'
+    else:
+      content_r['Status'] = 0
 
   content_r = json.dumps(content_r)
 
@@ -107,7 +112,7 @@ def PayloadReport():
 
 
 @post('/ZkAgentSvr/GetLowestP2P')
-def GetLowestP2P():
+def get_lowest_p2p():
   content_r = {'Status':0,'StatusDesc':'Success','NodeId':0}
   identity = None
 
@@ -119,25 +124,29 @@ def GetLowestP2P():
   logging.info('Received '+content)
 
   if not content:
-    content_r['StatusDesc'] = 'Request body is empty'
+    #HACK
+    #content_r['StatusDesc'] = 'Request body is empty'
+    identity = 'p2p'
   else:
     try:
       decodejson = json.loads(content, encoding='UTF-8')
     except:
       content_r['StatusDesc'] = 'Json parsing failed'
     else:
-      identity = decodejson['Identity']
+      #HACK
+      #identity = decodejson.get('Identity',None)
+      identity = decodejson.get('Identity','p2p')
 
-      if not identity:
-        content_r['StatusDesc'] = 'No Identity specified'
-      else:
-        ret = zclient.query_lowest(identity)
+  if not identity:
+    content_r['StatusDesc'] = 'No Identity specified'
+  else:
+    ret = zclient.query_lowest(identity)
 
-        if not ret:
-          content_r['StatusDesc'] = 'Querying payload failed'
-        else:
-          content_r['Status'] = 0
-          content_r['NodeId'] = ret
+    if not ret:
+      content_r['StatusDesc'] = 'Querying payload failed'
+    else:
+      content_r['Status'] = 0
+      content_r['NodeId'] = ret
 
   content_r = json.dumps(content_r)
 
@@ -149,7 +158,7 @@ def GetLowestP2P():
   return content_r
 
 @post('/ZkAgentSvr/Monitor')
-def Monitor():
+def monitor():
   content_r = {'Status':0,'StatusDesc':'Success','tree':{}}
   try:
     ret = zclient.export_tree('/')

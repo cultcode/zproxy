@@ -15,14 +15,14 @@ myDes3Key = ''
 myDes3Iv = ''
 myDes3 = None
 
-def svrInit(config):
+def svr_init(config):
   global myDes3Key, myDes3Iv, myDes3
   myDes3Key = config['des3-key']
   myDes3Iv = config['des3-iv']
   myDes3 = encrypt.myDes3Cipher(myDes3Key, myDes3Iv, DES3.MODE_CBC)
 
-  payload = {'EpochTime':common.getEpochTime(),'NodeName':common.getHostName(),'Version':common.getVersion(),"SvrType":15}
-  #payload = {'EpochTime':common.GetEpochTime(),'NodeName':'CSDX-TintanCDN.15-143','Version':common.GetVersion(),"SvrType":15}
+  payload = {'EpochTime':common.get_epochtime(),'NodeName':common.get_hostname(),'Version':common.get_version(),"SvrType":15}
+  #payload = {'EpochTime':common.get_epochtime(),'NodeName':'CSDX-TintanCDN.15-143','Version':common.get_version(),"SvrType":15}
   payload = json.dumps(payload, encoding='UTF-8')
   logging.info('Sent:     '+payload)
   payload = myDes3.myEncrypt(payload)

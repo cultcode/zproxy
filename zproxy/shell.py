@@ -9,7 +9,7 @@ import json
 import sys
 import getopt
 import logging
-from zproxy.common import to_str,to_bytes,getVersion
+from zproxy.common import to_str,to_bytes,get_version
 
 
 VERBOSE_LEVEL = 5
@@ -123,7 +123,7 @@ def get_config():
         print_help()
         sys.exit(0)
       elif key == '--version':
-        print(getVersion())
+        print(get_version())
         sys.exit(0)
       elif key == '--log-file':
         config['log-file'] = to_str(value)

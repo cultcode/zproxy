@@ -40,7 +40,7 @@ def to_str(s):
   return s
 
 
-def getVersion():
+def get_version():
   version = ''
   try:
     import pkg_resources
@@ -52,12 +52,12 @@ def getVersion():
   return version
 
 
-def getEpochTime():
+def get_epochtime():
   import time
   return hex(int(time.time()))[2:]
 
 
-def getHostName():
+def get_hostname():
   import socket
   return socket.gethostname()
 

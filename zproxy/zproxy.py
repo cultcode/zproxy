@@ -33,7 +33,7 @@ def main():
     shell.print_exception(e)
     sys.exit(1)
 
-#  remote.svrInit()
+#  remote.svr_init()
 
   zclient.start()
 

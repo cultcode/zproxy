@@ -88,7 +88,7 @@ def query_barrier(identity):
       logging.warn(e)
       return None
   else:
-    logging.warn("Master querying failed")
+    logging.warn("%s dosent exist" %path)
     return None
 
 
