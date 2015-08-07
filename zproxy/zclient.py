@@ -72,7 +72,33 @@ def start():
 
   zk.add_listener(my_listener)
 
-  zk.start()
+  try:
+    zk.start()
+  except Exception as e:
+    logging.error(e)
+    sys.exit(1)
+
+
+def release_barrier(identity):
+  ret = None
+  if identity is None:
+    return "Identity is empty"
+  path = '/'+identity+'/barrier'
+  if zk.exists(path):
+    try:
+      (value, junk) = zk.get(path)
+      value = json.loads(value)
+      if shell.config['nodeid'] ==  value['NodeId']:
+        zk.delete(path)
+      else:
+        ret = "NodeId:%d is not Master" %shell.config['nodeid']
+    except Exception as e:
+      logging.warn(e)
+      ret = "Operating zookeeper failed"
+  else:
+    ret = "Master doesnt exist under %s" %identity
+  return ret
+
 
 def query_barrier(identity):
   if identity is None:

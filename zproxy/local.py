@@ -19,7 +19,7 @@ def hello():
   return "Hello World!"
 
 @post('/ZkAgentSvr/GetDeliMaster')
-def get_deli_master():
+def GetDeliMaster():
   content_r = {'Status':0,'StatusDesc':'Success','NodeId':0}
   identity = None
 
@@ -65,7 +65,7 @@ def get_deli_master():
   return content_r
 
 @post('/ZkAgentSvr/PayloadReport')
-def payload_report():
+def PayloadReport():
   content_r = {'Status':0,'StatusDesc':'Success'}
   identity = None
 
@@ -112,7 +112,7 @@ def payload_report():
 
 
 @post('/ZkAgentSvr/GetLowestP2P')
-def get_lowest_p2p():
+def GetLowestP2P():
   content_r = {'Status':0,'StatusDesc':'Success','NodeId':0}
   identity = None
 
@@ -158,7 +158,7 @@ def get_lowest_p2p():
   return content_r
 
 @post('/ZkAgentSvr/Monitor')
-def monitor():
+def Monitor():
   content_r = {'Status':0,'StatusDesc':'Success','tree':{}}
   try:
     ret = zclient.export_tree('/')
@@ -167,6 +167,19 @@ def monitor():
   else:
     content_r['Status'] = 1
     content_r['tree'] = ret
+
+  content_r = json.dumps(content_r)
+  return content_r
+
+
+@post('/ZkAgentSvr/ReleaseDeliMaster')
+def RealseDeliMaster():
+  content_r = {'Status':0,'StatusDesc':'Success'}
+  ret=zclient.release_barrier('deli')
+  if ret:
+    content_r['StatusDesc'] = ret
+  else:
+    content_r['Status'] = 1
 
   content_r = json.dumps(content_r)
   return content_r
