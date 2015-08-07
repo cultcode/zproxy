@@ -79,43 +79,81 @@ def start():
     sys.exit(1)
 
 
-def release_barrier(identity):
-  ret = None
-  if identity is None:
-    return "Identity is empty"
-  path = '/'+identity+'/barrier'
-  if zk.exists(path):
-    try:
-      (value, junk) = zk.get(path)
-      value = json.loads(value)
-      if shell.config['nodeid'] ==  value['NodeId']:
-        zk.delete(path)
-      else:
-        ret = "NodeId:%d is not Master" %shell.config['nodeid']
-    except Exception as e:
-      logging.warn(e)
-      ret = "Operating zookeeper failed"
-  else:
-    ret = "Master doesnt exist under %s" %identity
-  return ret
-
-
 def query_barrier(identity):
+  nodeid = None
+  desc = None
+
   if identity is None:
-    return None
-  path = '/'+identity+'/barrier'
-  if zk.exists(path):
-    try:
-      (value, junk) = zk.get(path)
-      logging.info("Master is %s" %value)
-      value = json.loads(value)
-      return value['NodeId']
-    except Exception as e:
-      logging.warn(e)
-      return None
+    desc = "Identity is empty"
   else:
-    logging.warn("%s dosent exist" %path)
-    return None
+    path = '/'+identity+'/barrier'
+    if zk.exists(path):
+      try:
+        (value, junk) = zk.get(path)
+        value = json.loads(value)
+        nodeid = value['NodeId']
+      except Exception as e:
+        desc = "Operating zookeeper failed"
+    else:
+      desc = "%s dosent exist" %path
+  return (nodeid,desc)
+
+
+def release_barrier(identity):
+  desc = None
+
+  if identity is None:
+    desc = "Identity is empty"
+  else:
+    path = '/'+identity+'/barrier'
+    if zk.exists(path):
+      try:
+        (value, junk) = zk.get(path)
+        value = json.loads(value)
+      except Exception as e:
+        desc = "Operating zookeeper failed"
+      else:
+        if shell.config['nodeid'] ==  value['NodeId']:
+          zk.delete(path)
+        else:
+          desc = "NodeId:%d is not Master" %shell.config['nodeid']
+    else:
+      desc = "Master doesnt exist under %s" %identity
+  return desc
+
+
+def update_payload(identity,payload):
+  desc = None
+  path = '/'+identity
+
+  try:
+    nodes = zk.get_children(path)
+  except Exception as e:
+    desc = "Operating zookeeper failed"
+  else:
+    for node in nodes:
+      try:
+        (value,junk) = zk.get("%s/%s" %(path, node))
+        value = json.loads(value, encoding='UTF-8')
+      except Exception as e:
+        nodes.remove(node)
+      else:
+        if shell.config['nodeid'] == value['NodeId']:
+          break
+    else:
+      desc = "Cannot find NodeId:%s from children of %s" %(shell.config['nodeid'], path)
+
+    if not desc:
+      for (k,v) in payload.items():
+          value[k] = v
+
+      try:
+        value = json.dumps(value)
+        zk.set("%s/%s" %(path, node), value)
+      except:
+        desc = "Operating zookeeper failed"
+
+  return desc
 
 
 def query_lowest(identity):
@@ -126,68 +164,43 @@ def query_lowest(identity):
   nodeids = []
   lowest_v = sys.maxint
   lowest_i = []
+  nodeid = None
+  desc = None
 
   try:
     nodes = zk.get_children(path)
   except Exception as e:
-    logging.warn(e)
-    return None
-  for node in nodes:
-    try:
-      (value,junk) = zk.get("%s/%s" %(path, node))
-      value = json.loads(value, encoding='UTF-8')
-    except:
-      nodes.remove(node)
-    else:
-      values.append(value['TaskSum'])
-      nodeids.append(value['NodeId'])
-
-  for i in range(len(values)):
-    if int(values[i]) < lowest_v:
-      lowest_v = int(values[i])
-
-  for i in range(len(values)):
-    if values[i] == lowest_v:
-      lowest_i.append(i)
-
-  offset = offset + 1
-  if offset >= len(lowest_i):
-    offset = 0
-
-  return nodeids[offset]
-
-def update_payload(identity,payload):
-  path = '/'+identity
-
-  try:
-    nodes = zk.get_children(path)
-  except Exception as e:
-    logging.warn(e)
-    return False
-  for node in nodes:
-    try:
-      (value,junk) = zk.get("%s/%s" %(path, node))
-      value = json.loads(value, encoding='UTF-8')
-    except Exception as e:
-      logging.warn(e)
-      nodes.remove(node)
-    else:
-      if shell.config['nodeid'] == value['NodeId']:
-        break
+    desc = "Operating zookeeper failed"
   else:
-    logging.warn("Cannot find NodeId:%s from children of %s" %(shell.config['nodeid'], path))
-    return False
+    for node in nodes:
+      try:
+        (value,junk) = zk.get("%s/%s" %(path, node))
+        value = json.loads(value, encoding='UTF-8')
+      except:
+        nodes.remove(node)
+      else:
+        values.append(value['TaskSum'])
+        nodeids.append(value['NodeId'])
 
-  for (k,v) in payload.items():
-      value[k] = v
+    if not nodeids:
+      desc = "Operating(get) zookeeper failed"
+    else:
+      for i in range(len(values)):
+        if int(values[i]) < lowest_v:
+          lowest_v = int(values[i])
 
-  try:
-    value = json.dumps(value)
-    zk.set("%s/%s" %(path, node), value)
-  except:
-    return False
+      for i in range(len(values)):
+        if values[i] == lowest_v:
+          lowest_i.append(i)
 
-  return True
+      offset = offset + 1
+      if offset >= len(lowest_i):
+        offset = 0
+
+      nodeid = nodeids[offset]
+
+  return (nodeid,desc)
+
 
 def export_tree(path):
   tree = {}

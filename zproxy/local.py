@@ -20,7 +20,7 @@ def hello():
 
 @post('/ZkAgentSvr/GetDeliMaster')
 def GetDeliMaster():
-  content_r = {'Status':0,'StatusDesc':'Success','NodeId':0}
+  content_r = {'Status':0,'StatusDesc':'Success'}
   identity = None
 
   content = request.body.read()
@@ -49,11 +49,12 @@ def GetDeliMaster():
   else:
     ret = zclient.query_barrier(identity)
 
-    if not ret:
-      content_r['StatusDesc'] = 'Querying master failed'
+    if ret[1]:
+      content_r['StatusDesc'] = ret[1]
+    elif ret[0] != shell.config['nodeid']:
+      content_r['StatusDesc'] = 'Master is NodeId %d' %ret[0]
     else:
-      content_r['Status'] = 0
-      content_r['NodeId'] = ret
+      content_r['Status'] = 1
 
   content_r = json.dumps(content_r)
 
@@ -63,6 +64,20 @@ def GetDeliMaster():
     content_r = myDes3.myEncrypt(content_r)
 
   return content_r
+
+
+@post('/ZkAgentSvr/ReleaseDeliMaster')
+def RealseDeliMaster():
+  content_r = {'Status':0,'StatusDesc':'Success'}
+  ret=zclient.release_barrier('deli')
+  if ret:
+    content_r['StatusDesc'] = ret
+  else:
+    content_r['Status'] = 1
+
+  content_r = json.dumps(content_r)
+  return content_r
+
 
 @post('/ZkAgentSvr/PayloadReport')
 def PayloadReport():
@@ -96,8 +111,8 @@ def PayloadReport():
   else:
     ret = zclient.update_payload(identity, payload)
 
-    if not ret:
-      content_r['StatusDesc'] = 'Updating payload failed'
+    if ret:
+      content_r['StatusDesc'] = ret
     else:
       content_r['Status'] = 0
 
@@ -142,11 +157,11 @@ def GetLowestP2P():
   else:
     ret = zclient.query_lowest(identity)
 
-    if not ret:
-      content_r['StatusDesc'] = 'Querying payload failed'
+    if ret[1]:
+      content_r['StatusDesc'] = ret[1]
     else:
-      content_r['Status'] = 0
-      content_r['NodeId'] = ret
+      content_r['Status'] = 1
+      content_r['NodeId'] = ret[0]
 
   content_r = json.dumps(content_r)
 
@@ -167,19 +182,6 @@ def Monitor():
   else:
     content_r['Status'] = 1
     content_r['tree'] = ret
-
-  content_r = json.dumps(content_r)
-  return content_r
-
-
-@post('/ZkAgentSvr/ReleaseDeliMaster')
-def RealseDeliMaster():
-  content_r = {'Status':0,'StatusDesc':'Success'}
-  ret=zclient.release_barrier('deli')
-  if ret:
-    content_r['StatusDesc'] = ret
-  else:
-    content_r['Status'] = 1
 
   content_r = json.dumps(content_r)
   return content_r
