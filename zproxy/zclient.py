@@ -79,39 +79,38 @@ def start():
     sys.exit(1)
 
 
-def query_barrier(identity):
+def query_owned_node(path):
   nodeid = None
   desc = None
 
-  if identity is None:
-    desc = "Identity is empty"
+  if not path:
+    path = "Identity is empty"
   else:
-    path = '/'+identity+'/barrier'
     if zk.exists(path):
       try:
         (value, junk) = zk.get(path)
         value = json.loads(value)
-        nodeid = value['NodeId']
       except Exception as e:
-        desc = "Operating zookeeper failed"
+        desc = "Operating zookeeper failed %s" %e
+      else:
+        nodeid = value['NodeId']
     else:
       desc = "%s dosent exist" %path
   return (nodeid,desc)
 
 
-def release_barrier(identity):
+def remove_owned_node(path):
   desc = None
 
-  if identity is None:
-    desc = "Identity is empty"
+  if not path:
+    desc = "path is empty"
   else:
-    path = '/'+identity+'/barrier'
     if zk.exists(path):
       try:
         (value, junk) = zk.get(path)
         value = json.loads(value)
       except Exception as e:
-        desc = "Operating zookeeper failed"
+        desc = "Operating zookeeper failed %s" %e
       else:
         if shell.config['nodeid'] ==  value['NodeId']:
           zk.delete(path)
@@ -122,14 +121,13 @@ def release_barrier(identity):
   return desc
 
 
-def update_payload(identity,payload):
+def update_owned_childnode(path,payload):
   desc = None
-  path = '/'+identity
 
   try:
     nodes = zk.get_children(path)
   except Exception as e:
-    desc = "Operating zookeeper failed"
+    desc = "Operating zookeeper failed: %s" %e
   else:
     for node in nodes:
       try:
@@ -151,14 +149,13 @@ def update_payload(identity,payload):
         value = json.dumps(value)
         zk.set("%s/%s" %(path, node), value)
       except:
-        desc = "Operating zookeeper failed"
+        desc = "Operating zookeeper failed %s" %e
 
   return desc
 
 
-def query_lowest(identity):
+def query_lowest_childnode(path):
   global offset
-  path = '/'+identity
   nodes = []
   values = []
   nodeids = []
@@ -170,7 +167,7 @@ def query_lowest(identity):
   try:
     nodes = zk.get_children(path)
   except Exception as e:
-    desc = "Operating zookeeper failed"
+    desc = "Operating zookeeper failed %s" %e
   else:
     for node in nodes:
       try:
@@ -210,13 +207,13 @@ def export_tree(path):
   try:
     value,junk = zk.get(path)
   except Exception as e:
-    tree['value'] = ''
+    tree['value'] = "%s" %e
     logging.warn(e)
   else:
     try:
       value_d = json.loads(value)
     except Exception as e:
-      tree['value'] = value
+      tree['value'] = "%s" %e
     else:
       tree['value'] = value_d
 

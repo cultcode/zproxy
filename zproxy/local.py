@@ -47,7 +47,7 @@ def GetDeliMaster():
   if not identity:
     content_r['StatusDesc'] = 'No Identity specified'
   else:
-    ret = zclient.query_barrier(identity)
+    ret = zclient.query_owned_node('/'+identity+'/barrier')
 
     if ret[1]:
       content_r['StatusDesc'] = ret[1]
@@ -69,13 +69,39 @@ def GetDeliMaster():
 @post('/ZkAgentSvr/ReleaseDeliMaster')
 def RealseDeliMaster():
   content_r = {'Status':0,'StatusDesc':'Success'}
-  ret=zclient.release_barrier('deli')
-  if ret:
-    content_r['StatusDesc'] = ret
+  identity = None
+
+  content = request.body.read()
+  logging.info('Received '+content)
+
+  if not content:
+    #HACK
+    #content_r['StatusDesc'] = 'Request body is empty'
+    identity = 'deli'
   else:
-    content_r['Status'] = 1
+    try:
+      decodejson = json.loads(content, encoding='UTF-8')
+    except:
+      content_r['StatusDesc'] = 'Json parsing failed'
+    else:
+      #HACK
+      #identity = decodejson.get('Identity',None)
+      identity = decodejson.get('Identity','deli')
+
+  if not identity:
+    content_r['StatusDesc'] = 'No Identity specified'
+  else:
+    ret=zclient.remove_owned_node('/'+identity+'/barrier')
+
+    if ret:
+      content_r['StatusDesc'] = ret
+    else:
+      content_r['Status'] = 1
 
   content_r = json.dumps(content_r)
+
+  logging.info('Sent     '+content_r)
+
   return content_r
 
 
@@ -109,7 +135,7 @@ def PayloadReport():
   elif not payload:
     content_r['StatusDesc'] = 'No TaskSum specified'
   else:
-    ret = zclient.update_payload(identity, payload)
+    ret = zclient.update_owned_childnode('/'+identity, payload)
 
     if ret:
       content_r['StatusDesc'] = ret
@@ -155,7 +181,7 @@ def GetLowestP2P():
   if not identity:
     content_r['StatusDesc'] = 'No Identity specified'
   else:
-    ret = zclient.query_lowest(identity)
+    ret = zclient.query_lowest_childnode('/'+identity)
 
     if ret[1]:
       content_r['StatusDesc'] = ret[1]
