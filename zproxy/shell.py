@@ -152,7 +152,7 @@ def get_config():
 
   config['log-file'] = config.get('log-file', '/var/log/zproxy.log')
   config['verbose'] = config.get('verbose', 0)
-  config['local_address'] = to_str(config.get('local_address', 'localhost'))
+  config['local_address'] = to_str(config.get('local_address', b'0.0.0.0'))
   config['local_port'] = config.get('local_port', 7070)
   config['server_address'] = to_str(config.get('server_address', '127.0.0.1'))
   config['server_port'] = config.get('server_port', 2181)
