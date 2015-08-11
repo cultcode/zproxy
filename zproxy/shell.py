@@ -201,7 +201,7 @@ Proxy options:
   -c CONFIG              path to config file
   -s SERVER_ADDRESS      server address
   -p SERVER_PORT         server port, default: 8388
-  -a LOCAL_ADDRESS       local binding address, default: 127.0.0.1
+  -a LOCAL_ADDRESS       local binding address, default: 0.0.0.0
   -l LOCAL_PORT          local port, default: 1080
   -d IDENTITY            identity
   -b BARRIER             barrier mode
