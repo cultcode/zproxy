@@ -213,7 +213,7 @@ def export_tree(path):
     try:
       value_d = json.loads(value)
     except Exception as e:
-      tree['value'] = "%s" %e
+      tree['value'] = value
     else:
       tree['value'] = value_d
 
