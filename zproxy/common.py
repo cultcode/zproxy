@@ -47,8 +47,8 @@ def get_version():
     version = pkg_resources.get_distribution('zproxy').version
   except Exception as e:
     #pass
-    print_exception(e)
-    sys.exit(1)
+    print("warning: zproxy not installed yet and version is unknown")
+    version = "0.0"
   return version
 
 
