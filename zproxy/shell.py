@@ -92,8 +92,7 @@ def get_config():
       logging.info('loading config from %s' % config_path)
       with open(config_path, 'rb') as f:
         try:
-          config = json.loads(f.read().decode('utf8'),
-                              object_hook=_decode_dict)
+          config = json.loads(f.read().decode('utf8'))
         except ValueError as e:
           logging.error('found an error in config.json: %s',
                          e.message)
