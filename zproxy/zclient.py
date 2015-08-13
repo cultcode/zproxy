@@ -117,7 +117,7 @@ def remove_owned_node(path):
         else:
           desc = "NodeId:%d is not Master" %shell.config['nodeid']
     else:
-      desc = "Master doesnt exist under %s" %identity
+      desc = "Master doesnt exist under %s" %path
   return desc
 
 
