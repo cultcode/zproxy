@@ -52,7 +52,7 @@ def GetDeliMaster():
     if ret[1]:
       content_r['StatusDesc'] = ret[1]
     elif ret[0] != shell.config['nodeid']:
-      content_r['StatusDesc'] = 'Master is NodeId %d' %ret[0]
+      content_r['StatusDesc'] = 'Master is other NodeId %d' %ret[0]
     else:
       content_r['Status'] = 1
 
