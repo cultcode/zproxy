@@ -1,6 +1,6 @@
 {
     "dbagent":"http://DBAgent.Titan.imgo.tv",
     "identity":"deli",
-    "barrier":false,
+    "barrier":true,
     "encrypt":1
 }
