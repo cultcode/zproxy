@@ -18,8 +18,8 @@ myDes3 = None
 def hello():
   return "Hello World!"
 
-@post('/ZkAgentSvr/GetDeliMaster')
-def GetDeliMaster():
+@post('/ZkAgentSvr/DeliMastSvr/GetToken')
+def DeliMastSvr_GetToken():
   content_r = {'Status':0,'StatusDesc':'Success'}
   identity = None
 
@@ -66,8 +66,8 @@ def GetDeliMaster():
   return content_r
 
 
-@post('/ZkAgentSvr/ReleaseDeliMaster')
-def RealseDeliMaster():
+@post('/ZkAgentSvr/DeliMastSvr/ReleaseToken')
+def DeliMastSvr_ReleaseToken():
   content_r = {'Status':0,'StatusDesc':'Success'}
   identity = None
 
@@ -105,8 +105,8 @@ def RealseDeliMaster():
   return content_r
 
 
-@post('/ZkAgentSvr/PayloadReport')
-def PayloadReport():
+@post('/ZkAgentSvr/P2POrgSvr/PayloadReport')
+def P2POrgSvr_PayloadReport():
   content_r = {'Status':0,'StatusDesc':'Success'}
   identity = None
 
@@ -152,8 +152,8 @@ def PayloadReport():
   return content_r
 
 
-@post('/ZkAgentSvr/GetLowestP2P')
-def GetLowestP2P():
+@post('/ZkAgentSvr/DeliMastSvr/GetLowestP2P')
+def DeliMastSvr_GetLowestP2P():
   content_r = {'Status':0,'StatusDesc':'Success','NodeId':0}
   identity = None
 
