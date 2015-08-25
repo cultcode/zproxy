@@ -194,7 +194,7 @@ def query_lowest_childnode(path):
       if offset >= len(lowest_i):
         offset = 0
 
-      nodeid = nodeids[offset]
+      nodeid = nodeids[lowest_i[offset]]
 
   return (nodeid,desc)
 
