@@ -140,7 +140,7 @@ def P2POrgSvr_PayloadReport():
     if ret:
       content_r['StatusDesc'] = ret
     else:
-      content_r['Status'] = 0
+      content_r['Status'] = 1
 
   content_r = json.dumps(content_r)
 
