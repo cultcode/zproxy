@@ -44,3 +44,24 @@ def svr_init():
     sys.exit(1)
 
   return
+
+def send_sms(mobile, content):
+  sn = "DXX-WSS-103-05540"
+  pwd = "639989"
+  content += '[CDN]'
+  headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+
+  if mobile:
+    payload = 'sn=%s&pwd=%s&mobile=%s&content=%s' %(sn, pwd, mobile, content)
+    logging.info('Sent:     '+payload)
+
+    try:
+      r = requests.post('http://sdk.entinfo.cn:8060/webservice.asmx/SendSMS', data = payload, headers=headers)
+
+      r.raise_for_status()
+    except Exception as e:
+      logging.error('SendSMS failed: %s', e)
+    else:
+      content = r.text
+      logging.info('Received: '+content)
+

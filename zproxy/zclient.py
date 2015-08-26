@@ -13,7 +13,7 @@ from kazoo.client import KazooClient
 from kazoo.protocol.states import *
 from kazoo.exceptions import *
 
-from zproxy import shell
+from zproxy import shell, remote
 
 zk = None
 offset = -1
@@ -38,6 +38,7 @@ def create_ephemeral():
     sys.exit(1)
   else:
     logging.info("Node %s created with value %s" %(ret, value))
+    remote.send_sms(shell.config['mobile'], 'DeliMaster token transfered to %d' %(shell.config['nodeid']))
 
 
 def my_listener(state):
