@@ -17,9 +17,12 @@ from zproxy import shell, remote
 
 zk = None
 offset = -1
+flag_sms = False
 
 
 def create_ephemeral():
+  global flag_sms
+  ret = ''
   if not shell.config['barrier']:
     path  = '/'+shell.config['identity']+'/'
     value = json.dumps({'NodeId':shell.config['nodeid'],'TaskSum':0}, encoding='utf-8')
@@ -38,7 +41,9 @@ def create_ephemeral():
     sys.exit(1)
   else:
     logging.info("Node %s created with value %s" %(ret, value))
-    remote.send_sms(shell.config['mobile'], 'DeliMaster token transfered to %d' %(shell.config['nodeid']))
+
+    if flag_sms and ret:
+      remote.send_sms(shell.config['mobile'], 'DeliMaster token transfered to %d' %(shell.config['nodeid']))
 
 
 def my_listener(state):
@@ -65,11 +70,13 @@ def start():
 
     @zk.DataWatch(path_barrier)
     def watch_node(data, stat, event):
+      global flag_sms
       if event:
         logging.info("Node Event %s %s" %(event.path, event.type))
         if event.type == EventType.DELETED:
+          flag_sms = True
           zk.handler.spawn(create_ephemeral)
-      
+
 
   zk.add_listener(my_listener)
 
