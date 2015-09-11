@@ -72,7 +72,7 @@ def start():
     def watch_node(data, stat, event):
       global flag_sms
       if event:
-        logging.info("Node Event %s %s" %(event.path, event.type))
+        logging.info("Node Event %s %s, data %s" %(event.path, event.type, data))
         if event.type == EventType.DELETED:
           flag_sms = True
           zk.handler.spawn(create_ephemeral)
