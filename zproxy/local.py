@@ -8,13 +8,14 @@ from bottle import route, run, post, request
 from Crypto.Cipher import DES3
 import json
 import logging
-from zproxy import encrypt, zclient, shell, Heartbeat
+from zproxy import encrypt, zclient, shell
+from zproxy.Heartbeat import Heartbeat
 from threading import Thread, Event
 
 myDes3Key = ''
 myDes3Iv = ''
 myDes3 = None
-beat = None
+beat = Event()
 
 @route('/hello')
 def hello():
@@ -22,6 +23,7 @@ def hello():
 
 @post('/ZkAgentSvr/DeliMastSvr/GetToken')
 def DeliMastSvr_GetToken():
+  global beat
   content_r = {'Status':0,'StatusDesc':'Success'}
   identity = None
   beat.set()
@@ -223,7 +225,6 @@ def start():
   myDes3 = encrypt.myDes3Cipher(myDes3Key, myDes3Iv, DES3.MODE_CBC)
 
   global beat
-  beat = Event()
   heartbeat = Heartbeat(beat)
   heartbeat.start()
 

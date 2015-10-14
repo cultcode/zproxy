@@ -15,10 +15,15 @@ class Heartbeat(Thread):
 
   def run(self):
     while True:
-      if(self.beat.wait(60)):
+      ret = self.beat.wait(60)
+
+      if ret in (None, True):
         pass
-      else:
+      elif ret == False:
         # call a function
         logging.error("Heatbeat stopped for 60s, switch deli master")
         identity = 'deli'
-        ret=zclient.remove_owned_node('/'+identity+'/barrier')
+        desc=zclient.remove_owned_node('/'+identity+'/barrier')
+        logging.info(desc)
+
+      self.beat.clear()
