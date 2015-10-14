@@ -11,7 +11,7 @@ import signal
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from zproxy import shell, local, remote, zclient
+from zproxy import shell, local, remote, zclient, Heartbeat
 
 
 def main():
