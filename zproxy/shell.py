@@ -78,7 +78,7 @@ def get_config():
   logging.basicConfig(level=logging.INFO,
                       format='%(levelname)-s: %(message)s')
 
-  shortopts = 'hc:vqs:p:l:a:bd:k:i:g:n:e:m:'
+  shortopts = 'hc:vqs:p:l:a:bd:k:i:g:n:e:m:t:'
   longopts = ['help', 'version', 'log-file']
 
   try:
@@ -138,6 +138,8 @@ def get_config():
         config['encrypt'] = int(value)
       elif key == '-m':
         config['mobile'] = to_str(value)
+      elif key == '-t':
+        config['timeout_hb'] = int(value)
       elif key == '-q':
         v_count -= 1
         config['verbose'] = v_count
@@ -163,6 +165,7 @@ def get_config():
   config['nodeid'] = config.get('nodeid', 0)
   config['encrypt'] = config.get('encrypt', 1)
   config['mobile'] = to_str(config.get('mobile', ""))
+  config['timeout_hb'] = config.get('timeout_hb', 60)
 
   check_config(config)
 

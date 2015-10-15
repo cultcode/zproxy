@@ -19,6 +19,8 @@ def main():
 
   shell.get_config()
 
+  logging.info(shell.config)
+
   try:
     logging.info("starting local at %s:%d" %
                  (shell.config['local_address'], shell.config['local_port']))

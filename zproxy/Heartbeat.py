@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, print_function, \
     with_statement
 
 from threading import Thread, Event
-from zproxy import zclient
+from zproxy import zclient, shell
 import logging
 
 class Heartbeat(Thread):
@@ -14,7 +14,7 @@ class Heartbeat(Thread):
     self.beat = event
 
   def run(self):
-    timeout = 60
+    timeout = shell.config['timeout_hb']
     while True:
       self.beat.wait(timeout)
 
