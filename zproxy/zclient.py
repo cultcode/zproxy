@@ -17,11 +17,11 @@ from zproxy import shell, remote
 
 zk = None
 offset = -1
-flag_sms = False
+flag = [False, True] #0: enable sms, 1:enable create_ephemeral()
 
 
 def create_ephemeral():
-  global flag_sms
+  global flag
   ret = ''
   if not shell.config['barrier']:
     path  = '/'+shell.config['identity']+'/'
@@ -42,7 +42,7 @@ def create_ephemeral():
   else:
     logging.info("Node %s created with value %s" %(ret, value))
 
-    if flag_sms and ret:
+    if flag[0] and ret:
       remote.send_sms(shell.config['mobile'], 'DeliMaster token transfered to %d' %(shell.config['nodeid']))
 
 
@@ -70,12 +70,15 @@ def start():
 
     @zk.DataWatch(path_barrier)
     def watch_node(data, stat, event):
-      global flag_sms
+      global flag
       if event:
         logging.info("Node Event %s %s, data %s" %(event.path, event.type, data))
         if event.type == EventType.DELETED:
-          flag_sms = True
-          zk.handler.spawn(create_ephemeral)
+          flag[0] = True
+          if flag[1]:
+            zk.handler.spawn(create_ephemeral)
+          else:
+            flag[1] = True
 
 
   zk.add_listener(my_listener)
@@ -108,6 +111,7 @@ def query_owned_node(path):
 
 
 def remove_owned_node(path):
+  global flag
   desc = None
 
   if not path:
@@ -121,6 +125,7 @@ def remove_owned_node(path):
         desc = "Operating zookeeper failed %s" %e
       else:
         if shell.config['nodeid'] ==  value['NodeId']:
+          flag[1] = False
           zk.delete(path)
         else:
           desc = "NodeId:%d is not Master" %shell.config['nodeid']
