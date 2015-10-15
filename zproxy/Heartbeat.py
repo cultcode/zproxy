@@ -14,16 +14,18 @@ class Heartbeat(Thread):
     self.beat = event
 
   def run(self):
+    timeout = 60
     while True:
-      ret = self.beat.wait(60)
+      self.beat.wait(timeout)
 
-      if ret in (None, True):
-        pass
-      elif ret == False:
+      ret = self.beat.isSet()
+
+      if ret:
+        self.beat.clear()
+      else:
         # call a function
-        logging.error("Heatbeat stopped for 60s, switch deli master")
+        logging.error("Heatbeat stopped for %d seconds, switch deli master" %timeout)
         identity = 'deli'
         desc=zclient.remove_owned_node('/'+identity+'/barrier')
         logging.info(desc)
 
-      self.beat.clear()
